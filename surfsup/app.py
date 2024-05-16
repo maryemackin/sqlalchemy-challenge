@@ -3,7 +3,7 @@ import datetime as dt
 import numpy as np
 
 # Python SQL toolkit and Object Relational Mapper
-import sqlalchemy
+# import sqlalchemy
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
@@ -50,9 +50,11 @@ def welcome():
         f"/api/v1.0/stations<br/>"
         f"/api/v1.0/tobs<br/>"
         f"/api/v1.0/temp/start<br/>"
-        f"/api/v1.0/temp/end<br/>"
-        f">p>'start' and 'end'date should be in the format MMDDYYY.</p>"
+        f"/api/v1.0/temp/start/end<br/>"
+        f">p>'start' and 'end' date should be in the format MMDDYYYY.</p>"
     )
+
+
 @app.route("/api/v1.0/precipitation")
 def precipitation():
 
@@ -67,6 +69,8 @@ def precipitation():
 
     return jsonify(precip)
 
+
+
 @app.route("/api/v1.0/stations")
 def stations():
     station_results = session.query(Station.station).all()
@@ -77,21 +81,20 @@ def stations():
 
     return jsonify(stations=stations)
 
+
 @app.route("/api/v1.0/tobs")
 def t_monthly():
     last_year = dt.date(2017,8,23) - dt.timedelta(days=365)
 
     temp_st_results = session.query(Measurement.tobs).\
         filter(Measurement.station == 'USC00519281').\
-        filter(Measurement.date <= last_year).all()
+        filter(Measurement.date >= last_year).all()
 
     session.close()
 
     temps = list(np.ravel(temp_st_results))
 
     return jsonify(temps=temps)
-
-# Code verified to this point
 
 
 @app.route("/api/v1.0/temp/<start>")
@@ -108,18 +111,19 @@ def stats(start=None, end=None):
         session.close()
 
         temps = list(np.ravel(start_results))
-        return jsonify(temps)
+        return jsonify(temps=temps)
+
     
     start = dt.datetime.strptime(start, "%m%d%Y")
     end = dt.datetime.strptime(end, "%m%d%Y")
 
-    results = session.query(*sel).\
+    st_end_results = session.query(*sel).\
         filter(Measurement.date >= start).\
-        filter(Measurement.date <= end)
+        filter(Measurement.date <= end).all()
 
     session.close()
 
-    temps = list(np.ravel(results))
+    temps = list(np.ravel(st_end_results))
 
     return jsonify(temps=temps)
 
